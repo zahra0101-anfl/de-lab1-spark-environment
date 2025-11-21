@@ -1,0 +1,56 @@
+(venv) PS C:\Users\hp\OneDrive\Bureau\data-engineering-course> python lab1_hello_spark.py                              
+25/11/21 01:33:07 WARN Shell: Did not find winutils.exe: java.io.FileNotFoundException: java.io.FileNotFoundException: HADOOP_HOME and hadoop.home.dir are unset. -see https://wiki.apache.org/hadoop/WindowsProblems
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+25/11/21 01:33:08 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+
+=== Spark Environment Info ===
+Spark Version: 3.5.0
+Application Name: Lab1 Hello Spark
+Master: local[*]
+================================
+
+=== DataFrame Schema ===
+root
+ |-- name: string (nullable = true)
+ |-- age: long (nullable = true)
+ |-- city: string (nullable = true)
+ |-- salary: double (nullable = true)
+
+
+=== Data Preview ===
++-------+---+------+------+
+|   name|age|  city|salary|
++-------+---+------+------+
+|  Alice| 25| Paris|3000.0|
+|    Bob| 35|London|4500.0|
+|Charlie| 30| Paris|5000.0|
+|   Dina| 40|Berlin|6000.0|
++-------+---+------+------+
+
+
+=== People older than 30 ===
++----+---+------+------+
+|name|age|  city|salary|
++----+---+------+------+
+| Bob| 35|London|4500.0|
+|Dina| 40|Berlin|6000.0|
++----+---+------+------+
+
+
+=== Average salary by city ===
++------+----------+
+|  city|avg_salary|
++------+----------+
+| Paris|    4000.0|
+|London|    4500.0|
+|Berlin|    6000.0|
++------+----------+
+
+
+=== Row Count ===
+Total rows: 4
+
+=== Spark Application Finished ===
+
+Press Enter to exit...   
