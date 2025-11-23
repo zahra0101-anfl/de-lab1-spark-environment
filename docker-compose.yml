@@ -21,6 +21,7 @@ services:
   # ==================== Spark Master ====================
   spark-master:
     image: apache/spark:${SPARK_VERSION:-latest}
+    # image: bitnami/spark:${SPARK_VERSION:-latest}
     container_name: spark-master
     restart: unless-stopped
     command: >
@@ -28,6 +29,7 @@ services:
     ports:
       - "${SPARK_MASTER_WEBUI_PORT:-8080}:${SPARK_MASTER_WEBUI_PORT:-8080}"
       - "${SPARK_MASTER_PORT:-7077}:${SPARK_MASTER_PORT:-7077}"
+      - "4040:4040"
     environment:
       SPARK_MASTER_HOST: 0.0.0.0
       SPARK_MASTER_PORT: ${SPARK_MASTER_PORT:-7077}
@@ -63,7 +65,7 @@ services:
       SPARK_WORKER_WEBUI_PORT: ${SPARK_WORKER_WEBUI_PORT:-8081}
       SPARK_PUBLIC_DNS: "${SPARK_PUBLIC_DNS:-localhost}"
     volumes:
-      - spark_data:/opt/spark/work-dir
-      # - ./spark-data:/opt/spark/data 
+      #- spark_data:/opt/spark/data #work-dir
+      - ./spark-data:/opt/spark/data 
     networks:
       - sparknet
