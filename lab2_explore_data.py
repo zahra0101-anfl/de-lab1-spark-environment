@@ -8,6 +8,14 @@ if sys.platform == 'win32':
     # On pointe vers le dossier où vous avez mis winutils.exe
     # Assurez-vous que le fichier est bien dans: C:\hadoop\bin\winutils.exe
     HADOOP_HOME = "C:\\hadoop"
+    # Ensure the HADOOP_HOME folder exists to avoid Hadoop's Java check failing.
+    # We do not provide winutils.exe here; this only prevents the "directory does not exist" exception.
+    try:
+        os.makedirs(HADOOP_HOME, exist_ok=True)
+        os.makedirs(os.path.join(HADOOP_HOME, "bin"), exist_ok=True)
+    except Exception:
+        # If creation fails (permission issues), just don't create it — keep behavior unchanged.
+        pass
     os.environ['HADOOP_HOME'] = HADOOP_HOME
 
     # Configuration Python pour Spark
@@ -136,9 +144,45 @@ def main():
     output_path = base_path + "summary/"
     print(f"Écriture du CSV vers: {output_path}")
     
-    # C'est ici que l'erreur winutils se produisait. Avec le fix et le fichier .exe, ça doit passer.
-    summary_df.coalesce(1).write.mode("overwrite").option("header", "true").csv(output_path)
-    print("✓ Rapport exporté avec succès.")
+    # Essayer d'écrire via Spark. Sur Windows sans winutils.exe, cela peut échouer.
+    # Dans ce cas, on tombe en backfill en écrivant un petit CSV local via Python.
+    # On Windows, if winutils.exe isn't present, calling Spark's writer triggers
+    # a Java/Hadoop FileNotFoundException and a large stacktrace. Detect that
+    # and use the Python CSV fallback directly to avoid noisy Java errors.
+    winutils_path = None
+    if sys.platform == 'win32':
+        winutils_path = os.path.join(HADOOP_HOME, "bin", "winutils.exe")
+
+    if winutils_path and not os.path.exists(winutils_path):
+        print("winutils.exe not found — skipping Spark CSV write and using fallback.")
+        write_with_python = True
+    else:
+        write_with_python = False
+
+    if not write_with_python:
+        try:
+            summary_df.coalesce(1).write.mode("overwrite").option("header", "true").csv(output_path)
+            print("✓ Rapport exporté avec succès via Spark.")
+        except Exception as e:
+            print(f"⚠️ Spark CSV write failed: {e}")
+            write_with_python = True
+
+    if write_with_python:
+        print("Fallback: écriture locale du CSV via le module csv de Python...")
+        import csv
+        os.makedirs(output_path, exist_ok=True)
+        local_file = os.path.join(output_path, "summary.csv")
+        rows = summary_df.collect()
+        with open(local_file, "w", newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Metric", "Value"])
+            for r in rows:
+                # r peut être un Row; accéder par nom ou index
+                try:
+                    writer.writerow([r['Metric'], r['Value']])
+                except Exception:
+                    writer.writerow([r[0], r[1]])
+        print(f"✓ Rapport exporté localement vers: {local_file}")
 
     # --- PARTIE C: BUSINESS QUESTIONS  ---
     print("\n" + "="*40)
