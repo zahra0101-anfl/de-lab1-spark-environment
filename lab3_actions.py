@@ -1,4 +1,7 @@
 # lab3_actions.py
+import os
+os.environ["HADOOP_HOME"] = "tmp_hadoop"
+os.environ["hadoop.home.dir"] = "tmp_hadoop"
 
 import time
 from pyspark.sql import SparkSession
@@ -67,30 +70,13 @@ print("first() et head() retournent la même ligne sur un DataFrame[cite: 159]."
 print("\n--- Action 6: write ---")
 # Écrire les clients des États-Unis en CSV
 usa_customers = customers.filter(col("country") == "USA")
-try:
-    (
-        usa_customers.coalesce(1)  # coalesce(1) pour créer un seul fichier de sortie [cite: 162]
-        .write.mode("overwrite")
-        .option("header", "true")
-        .csv("spark-data/ecommerce/usa_customers")
-    )
-    print("Clients des États-Unis écrits dans spark-data/ecommerce/usa_customers (CSV)")
-except Exception as e:
-    print(f"⚠️ Spark CSV write failed: {e}")
-    # Fallback: write a single CSV via Python
-    try:
-        import csv, os
-        os.makedirs("spark-data/ecommerce/usa_customers", exist_ok=True)
-        local_file = os.path.join("spark-data/ecommerce/usa_customers", "usa_customers.csv")
-        rows = usa_customers.collect()
-        with open(local_file, "w", newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(usa_customers.columns)
-            for r in rows:
-                writer.writerow([r[c] for c in usa_customers.columns])
-        print(f"Fallback: écrit localement {local_file}")
-    except Exception as e2:
-        print(f"Fallback write also failed: {e2}")
+(
+    usa_customers.coalesce(1)  # coalesce(1) pour créer un seul fichier de sortie [cite: 162]
+    .write.mode("overwrite")
+    .option("header", "true")
+    .csv("spark-data/ecommerce/usa_customers")
+)
+print("Clients des États-Unis écrits dans spark-data/ecommerce/usa_customers (CSV)[cite: 165].")
 
 # Écrire tous les clients en Parquet
 try:
@@ -98,18 +84,10 @@ try:
     print("Tous les clients écrits dans spark-data/ecommerce/customers.parquet (Parquet)")
 except Exception as e:
     print(f"⚠️ Spark Parquet write failed: {e}")
-    # Fallback: write CSV instead
+    # Fallback: write CSV using Spark
     try:
-        import csv, os
-        os.makedirs("spark-data/ecommerce", exist_ok=True)
-        local_file = os.path.join("spark-data/ecommerce", "customers_fallback.csv")
-        rows = customers.collect()
-        with open(local_file, "w", newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerow(customers.columns)
-            for r in rows:
-                writer.writerow([r[c] for c in customers.columns])
-        print(f"Fallback: écrit localement {local_file}")
+        customers.write.csv("spark-data/ecommerce/customers_fallback", header=True, mode="overwrite")
+        print("Fallback: écrit localement dans spark-data/ecommerce/customers_fallback (CSV)")
     except Exception as e2:
         print(f"Fallback write also failed: {e2}")
 

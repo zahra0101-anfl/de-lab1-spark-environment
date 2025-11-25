@@ -1,0 +1,7 @@
+Metric,Value
+Total Requests,10000
+Valid Requests,10000
+Unique IPs,19
+Unique Pages,9
+4xx Errors,1416
+5xx Errors,2845
